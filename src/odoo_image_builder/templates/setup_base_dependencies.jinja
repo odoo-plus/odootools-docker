@@ -1,0 +1,38 @@
+RUN set -x; \
+    apt-get update \
+    && apt-get install -y --no-install-recommends \
+{%- for package in base_packages %}
+        {{package}} \
+{%- endfor %}
+    && rm -rf /var/lib/apt/lists/* \
+    && update-alternatives --install /usr/bin/python python /usr/bin/{{python_bin}} 1 \
+    && python -m pip install odoo-tools \
+    && rm -rf /var/lib/apt/lists/* \
+    && rm -rf /root/.cache
+
+RUN set -x; \
+    export GNUPGHOME="$(mktemp -d)" \
+{%- for repo in deb_repos %}
+{%- if repo.key %}
+    && gpg --batch --keyserver keyserver.ubuntu.com --recv-keys "{{repo.key}}" \
+    && gpg --batch --armor --export "{{repo.key}}" > /etc/apt/trusted.gpg.d/{{repo.name}}.gpg.asc \
+{%- endif %}
+{%- if repo.key_url %}
+    && curl {{repo.key_url}} | apt-key add - \
+{%- endif %}
+{%- if repo.list_url %}
+    && curl {{repo.list_url}} > /etc/apt/sources.list.d/{{repo.name}}.list \
+{%- else %}
+    && echo 'deb {{repo.url}} {{repo.name}} {{repo.repo}}' > /etc/apt/sources.list.d/{{repo.name}}.list \
+{%- endif %}
+{%- endfor %}
+    && gpgconf --kill all \
+    && apt-get update \
+{%- for repo in deb_repos %}
+    && {% if repo.environments %}{% for key, value in repo.environments.items() %}{{key}}={{value}} {% endfor %}{% endif %}apt-get install -y --no-install-recommends \
+{%- for package in repo.packages %}
+        {{package}} \
+{%- endfor %}
+{%- endfor %}
+    && rm -rf /var/lib/apt/lists/* \
+    && rm -rf "$GNUPGHOME"

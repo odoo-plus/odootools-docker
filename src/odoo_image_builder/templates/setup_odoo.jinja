@@ -1,0 +1,27 @@
+
+RUN set -x; \
+    apt-get update \
+    && apt-get install -y --no-install-recommends \
+    {%- for package in odoo_packages %}
+        {{package}} \
+    {%- endfor %}
+    && python -m pip install -U pip \
+    {%- if odoo_pip_packages %}
+    && python -m pip install \
+    {%- for package in odoo_pip_packages %}
+        {{package}} \
+    {%- endfor %}
+    {%- endif %}
+    && odoo-install \
+        --release "{{odoo.release}}" \
+        --version "{{odoo.version}}" \
+        --repo "{{odoo.repo}}" \
+        --ref "{{odoo.ref}}" \
+        --languages "{{odoo.languages}}" \
+    && apt-get --purge remove -y \
+    {%- for package in odoo_packages %}
+        {{package}} \
+    {%- endfor %}
+    && apt-get autoremove -y \
+    && rm -rf /var/lib/apt/lists/* \
+    && rm -rf /root/.cache
