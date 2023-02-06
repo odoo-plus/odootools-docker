@@ -12,12 +12,12 @@ RUN set -x; \
         {{package}} \
     {%- endfor %}
     {%- endif %}
-    && odoo-install \
+    && odootools manage setup \
         --release "{{odoo.release}}" \
-        --version "{{odoo.version}}" \
         --repo "{{odoo.repo}}" \
         --ref "{{odoo.ref}}" \
         --languages "{{odoo.languages}}" \
+        "{{odoo.version}}" \
     && apt-get --purge remove -y \
     {%- for package in odoo_packages %}
         {{package}} \

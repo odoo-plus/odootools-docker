@@ -2,5 +2,5 @@ from .. import renderer
 
 
 def main():
-    renderer.render()
+    print(renderer.render())
     return True

@@ -1,4 +1,3 @@
-COPY assets/odoo.conf /etc/odoo/odoo.conf
 
 ARG UID={{user.uid}}
 ARG GID={{user.gid}}
@@ -6,6 +5,8 @@ ARG GID={{user.gid}}
 RUN mkdir /addons \
     && groupadd -r -g ${GID} odoo \
     && useradd -r -u ${UID} -g odoo -b /var/lib -m odoo \
-    && chown odoo /etc/odoo/odoo.conf \
+    && mkdir /etc/odoo \
+    && echo '[options]\ndata_dir = /var/lib/odoo\n' >> /etc/odoo/odoo.conf \
+    && chown -R odoo:odoo /etc/odoo \
     && chown -R odoo:odoo /addons \
-    && echo "odoo ALL=(ALL:ALL) NOPASSWD:SETENV: /usr/local/bin/odoo-entrypoint" >> /etc/sudoers
+    && echo "odoo ALL=(ALL:ALL) NOPASSWD:SETENV: /usr/local/bin/odootools" >> /etc/sudoers

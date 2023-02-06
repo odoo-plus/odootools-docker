@@ -1,6 +1,6 @@
 import toml
 
-from odoo_tools.configuration.services import get_services, Normalizer
+from odoo_tools.services.objects import ServiceManifests
 
 from argparse import ArgumentParser
 from ..renderer import make_context
@@ -89,35 +89,28 @@ def main():
 
         services = toml.load(filename)
 
-        ignore_self = True
+        manifests = ServiceManifests.parse(services)
 
-        normalizer = Normalizer(
-            inherit_addons=True,
-            resolve_inheritance=True,
-            self_url=None,
-            ignore_self=ignore_self
-        )
+        service = manifests.services[env].resolved
 
-        services = normalizer.parse(services)
-        by_name = get_services(services)
-        service = by_name.get(env)
+        odoo_version = service.odoo.version
 
-        odoo_version = service['odoo_version']
-
-        odoo_config = service.get('odoo', {})
-        repo_config = odoo_config.get('repo', {})
+        odoo_config = service.odoo
+        repo_config = odoo_config.repo
 
         base_context = {
             "odoo": {
                 "version": odoo_version,
-                "ref": repo_config.get('commit', odoo_version),
-                "repo": repo_config.get('url') or args.repo,
+                "ref": repo_config.ref,
+                "repo": repo_config.url or args.repo,
                 "release": "",
-                "languages": odoo_config.get('languages') or args.languages
+                "languages": odoo_config.languages or args.languages
             }
         }
     elif args.stdin:
         base_context = get_context()
 
     context = make_context(base_context)
+    context['template_dirs'] = ['template']
+
     return exit_ok(context)

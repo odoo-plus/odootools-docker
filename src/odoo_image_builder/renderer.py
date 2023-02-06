@@ -1,6 +1,12 @@
 import os
 from datetime import datetime
-from jinja2 import Environment, PackageLoader, select_autoescape, FileSystemLoader
+from jinja2 import (
+    Environment,
+    PackageLoader,
+    ChoiceLoader,
+    select_autoescape,
+    FileSystemLoader,
+)
 from .tools import get_context
 
 
@@ -87,28 +93,34 @@ def get_setup_steps(context):
 
 def get_extra_deb_repos(context):
 
-    deb_repos = [
-        {
-            "url": "https://apt.postgresql.org/pub/repos/apt/",
-            "name": "{os_version}-pgdg",
-            "repo": "main",
-            "key": "B97B0AFCAA1A47F044F244A07FCC7D46ACCC4CF8",
-            "packages": [
-                "postgresql-client"
-            ],
+    odbc_repo = { # noqa
+        "name": "{os_version}-microsoft",
+        "key_url": "https://packages.microsoft.com/keys/microsoft.asc",
+        "list_url": (
+            "https://packages.microsoft.com/config/"
+            "{os_name}/{os_release}/prod.list"
+        ),
+        "environments": {
+            "ACCEPT_EULA": "Y"
         },
-        {
-            "name": "{os_version}-microsoft",
-            "key_url": "https://packages.microsoft.com/keys/microsoft.asc",
-            "list_url": "https://packages.microsoft.com/config/{os_name}/{os_release}/prod.list",
-            "environments": {
-                "ACCEPT_EULA": "Y"
-            },
-            "packages": [
-                "msodbcsql18"
-            ]
-        }
-    ]
+        "packages": [
+            "msodbcsql18"
+        ]
+    }
+
+    postgres_repo = {
+        "url": "https://apt.postgresql.org/pub/repos/apt/",
+        "name": "{os_version}-pgdg",
+        "repo": "main",
+        "key": "B97B0AFCAA1A47F044F244A07FCC7D46ACCC4CF8",
+        "packages": [
+            "postgresql-client"
+        ],
+    }
+
+    deb_repos = []
+    deb_repos.append(postgres_repo)
+    # deb_repos.append(odbc_repo)
 
     return [
         {
@@ -169,7 +181,7 @@ def make_context(override_context=None):
         override_context = {}
 
     context = {
-        "base_image": "ubuntu:22.04",
+        # "base_image": "ubuntu:22.04",
         "deb_repos": [
         ],
         "user": {
@@ -225,7 +237,7 @@ def default_labels(context):
         "org.opencontainers.image.documentation": documentation,
         "org.opencontainers.image.source": repo,
         "org.opencontainers.image.version": "{odoo[version]}",
-        "org.opencontainers.image.vendor": "ArcheTI",
+        "org.opencontainers.image.vendor": "LLacroix",
         "org.opencontainers.image.ref.name": "{odoo[ref]}",
         "org.opencontainers.image.title": "Odoo {odoo[version]}",
         "org.opencontainers.image.description": description
@@ -247,6 +259,9 @@ def get_host_config(context):
     elif odoo_version <= 15:
         os_version = "focal"
         os_release = "20.04"
+    # elif odoo_version <= 15:
+    #     os_version = "foca"
+    #     os_release = "22.04"
 
     if odoo_version <= 10:
         python_bin = "python2.7"
@@ -260,41 +275,28 @@ def get_host_config(context):
         "os_name": os_name,
         "os_version": os_version,
         "os_release": os_release,
+        "os_arch": "amd64"
     }
 
+
 def render():
+    context = get_context()
+
+    loaders = [
+        FileSystemLoader(dirname)
+        for dirname in context.get('template_dirs', [])
+    ]
+
+    loaders.append(
+        PackageLoader("odoo_image_builder", "templates")
+    )
+
+    loader = ChoiceLoader(loaders)
+
     env = Environment(
-        # loader=FileSystemLoader("./templates"),
-        loader=PackageLoader("odoo_image_builder", "templates"),
+        loader=loader,
         autoescape=select_autoescape()
     )
 
-    # odoo_version = "15.0"
-
-    # base_context = {
-    #     "odoo": {
-    #         "version": odoo_version,
-    #         "ref": odoo_version,
-    #         "repo": "https://github.com/odoo/odoo.git",
-    #         "release": "",
-    #         "languages": "all"
-    #     }
-    # }
-
-    # base_context = {
-    #     "python_bin": "python3.8",
-    #     "os_name": "ubuntu",
-    #     "os_version": "focal",
-    #     "odoo": {
-    #         "version": odoo_version,
-    #         "ref": odoo_version,
-    #         "release": "",
-    #         "repo": "https://github.com/odoo/odoo.git"
-    #     },
-    # }
-
-    base_context = get_context()
-
     template = env.get_template("main.jinja")
-    context = make_context(base_context)
-    print(template.render(**context))
+    return template.render(**context)

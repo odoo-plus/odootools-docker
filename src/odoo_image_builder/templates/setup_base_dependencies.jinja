@@ -34,5 +34,10 @@ RUN set -x; \
         {{package}} \
 {%- endfor %}
 {%- endfor %}
+{%- for deb in deb_files %}
+    && curl -o package.deb -sSL {{deb.url}} \
+    && apt-get install -y --no-install-recommends ./package.deb \
+    && rm ./package.deb \
+{%- endfor %}
     && rm -rf /var/lib/apt/lists/* \
     && rm -rf "$GNUPGHOME"
