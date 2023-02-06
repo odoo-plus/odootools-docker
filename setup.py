@@ -4,11 +4,11 @@ with open("README.md", "r", encoding="utf-8") as fh:
     long_description = fh.read()
 
 setuptools.setup(
-    name="odoo_image_builder",
+    name="odootools_docker",
     version="0.0.1",
-    author="Example Author",
-    author_email="author@example.com",
-    description="A small example package",
+    author="Loïc Faure-Lacroix",
+    author_email="lamerstar@gmail.com",
+    description="Odootools script to generate docker images",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/pypa/sampleproject",
@@ -22,7 +22,7 @@ setuptools.setup(
     ],
     package_dir={"": "src"},
     package_data={
-        "odoo_image_builder": ["templates/**/*"],
+        "odootools_docker": ["templates/**/*"],
     },
     packages=setuptools.find_packages(where="src"),
     python_requires=">=3.6",
@@ -30,10 +30,5 @@ setuptools.setup(
         'Jinja2',
     ],
     entry_points={
-        'console_scripts': [
-            "odoo-platform-arch=odoo_image_builder.cli.platform:main",
-            "odoo-image-build=odoo_image_builder.cli.build:main",
-            "odoo-image-context=odoo_image_builder.cli.context:main",
-        ]
     }
 )
