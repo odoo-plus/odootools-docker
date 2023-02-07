@@ -1,6 +1,8 @@
+import click
 from .. import renderer
 
 
-def main():
+@click.command()
+def render():
     print(renderer.render())
     return True

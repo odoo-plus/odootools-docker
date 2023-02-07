@@ -30,5 +30,8 @@ setuptools.setup(
         'Jinja2',
     ],
     entry_points={
+        "odootools.command": [
+            "docker = odootools_docker.cli.docker:docker",
+        ]
     }
 )
