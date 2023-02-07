@@ -288,7 +288,7 @@ def render():
     ]
 
     loaders.append(
-        PackageLoader("odoo_image_builder", "templates")
+        PackageLoader("odootools_docker", "templates")
     )
 
     loader = ChoiceLoader(loaders)
