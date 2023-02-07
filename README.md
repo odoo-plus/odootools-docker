@@ -22,3 +22,34 @@ Here's an example adding whtmltopdf utilities:
     odootools docker context -v 15 \
     | odootools docker wkhtmltopdf \
     | odootools docker render
+
+
+Working with odootools Docker
+=============================
+
+Odootools docker is a bit more than just a script to build docker images. It
+can be extended by defining your own templates that can get loaded based on the
+provided context.
+
+The external templates can be provided in the context through the key `template_dirs`.
+
+Then the `steps` list can be used to add/remove steps in the context. Those are the main
+templates that will get loaded by the Dockerfile renderer in the provided order.
+
+
+For example:
+
+    {
+      "template_dirs": "/custom/templates",
+      "steps": [
+        "a",
+        "b",
+        "c",
+      ]
+    }
+
+
+Will lookup for the template name `a.jinja`, `b.jinja`, `c.jinja` from 
+`/custom/templates` first, then from the installed package `odootools_docker`.
+
+It's possible to completely overwrite the way the context is rendered.
