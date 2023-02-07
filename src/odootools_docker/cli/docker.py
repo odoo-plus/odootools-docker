@@ -6,7 +6,9 @@ from .build import render
 
 @click.group()
 def docker():
-    pass
+    """
+    Main docker group of commands.
+    """
 
 
 docker.add_command(wkhtmltopdf)

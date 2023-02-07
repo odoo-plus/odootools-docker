@@ -11,6 +11,16 @@ from .tools import get_context
 
 
 def get_base_packages(context):
+    """
+    Returns a list of native libraries to install based
+    on the version of odoo required in the context.
+
+    .. note::
+
+        TODO should use the logic into odoo-tools instead
+        of duplicating the logic of packages everywhere.
+
+    """
     packages = [
         "curl",
         "libpq-dev",
@@ -37,6 +47,22 @@ def get_base_packages(context):
 
 
 def get_python_version(context):
+    """
+    Get the python version from the python_bin as passed in the
+    context.
+
+    Args:
+      context (HashMap<str, Any>): An hashmap of JSON serializable
+        values used to define a rendering context for the docker image.
+
+    Returns:
+      float: The float representation of a python version like 3.6, 3.8 etc.
+
+    .. note::
+        TODO: Change the return type to something else than float. The issue is
+        that some version of python could potentially become 3.59999999 instead
+        of 3.6.
+    """
     python_binary = context['python_bin']
     version = python_binary.replace('python', '')
     python_version = float(version)
@@ -44,10 +70,36 @@ def get_python_version(context):
 
 
 def get_odoo_version(context):
+    """
+    Get the version of Odoo based on the context as a float.
+
+    Args:
+      context (HashMap<str, Any>): An hashmap of JSON serializable
+        values used to define a rendering context for the docker image.
+
+    Returns:
+      float: The float representation of an odoo version like 14.0, 15.1 etc
+
+    .. note::
+        TODO: Change the return type to a Version type that can be compared
+        even if the version contain strings like 14.0-sass.
+    """
     return float(context['odoo']['version'])
 
 
 def get_python_packages(context):
+    """
+    Returns a list of python packages required to install odoo.
+
+    Args:
+      context (HashMap<str, Any>): An hashmap of JSON serializable
+        values used to define a rendering context for the docker image.
+
+    Returns:
+        List<Str>: List of strings representing a native python package. This
+        function can be merged with the native package methods. There's no
+        real need to split it.
+    """
     python_binary = context['python_bin']
 
     packages = [
@@ -92,6 +144,23 @@ def get_setup_steps(context):
 
 
 def get_extra_deb_repos(context):
+    """
+    Returns a list of RepositoryObject.
+
+    This method can be used to return a list of prepared repositories. Package
+    repositories are used to install binaries that may not be directly
+    available in the main repository of the selected distribution. For example,
+    you'd want to use a more modern version of the postgres client to be able
+    to connect to a recent database.
+
+    There are 2 types of object.
+
+    Those with a key already available and one with a key url and list url.
+
+    Returns:
+        List<HashMap<str, Any>>: Returns a list of repository that can be
+        prepared when installing native libraries.
+    """
 
     odbc_repo = { # noqa
         "name": "{os_version}-microsoft",
@@ -132,6 +201,13 @@ def get_extra_deb_repos(context):
 
 
 def get_odoo_pip_packages(context):
+    """
+    Returns a list of packages required to install Odoo.
+
+    .. note::
+        This method seems to be irrelevant as Python2 is no
+        longer supported.
+    """
     packages = [
         # "odoo-tools",
     ]
@@ -147,6 +223,25 @@ def get_odoo_pip_packages(context):
 
 
 def get_odoo_packages(context):
+    """
+    List of packages required to install Odoo and its dependencies.
+
+    This method returns all the packages that are necessary to install
+    Odoo and its dependencies. Those packages are also not needed to run
+    Odoo. They're only needed to build dependencies.
+
+    For that reason, packages in this list are installed before Odoo is
+    installed and uninstalled right after Odoo has been installed. This
+    prevent those packages to be packed into a layer and making the size
+    of the docker image grow.
+
+    Args:
+      context (HashMap<str, Any>): An hashmap of JSON serializable
+        values used to define a rendering context for the docker image.
+
+    Returns:
+        List<Str>: List of packages that are temporarily needed.
+    """
     packages = [
         "build-essential",
         "libsasl2-dev",
@@ -161,6 +256,21 @@ def get_odoo_packages(context):
 
 
 def get_default_environment(context):
+    """
+    Returns default environment variables to define.
+
+    Each value in the environment variables can be formatted
+    to match a value in the context.
+
+    Args:
+      context (HashMap<str, Any>): An hashmap of JSON serializable
+        values used to define a rendering context for the docker image.
+
+    Returns:
+        HashMap<Str, Str>: A key/value of environment variables that
+        should be defined in the image.
+
+    """
     envs = {
         "ODOO_RC": "/etc/odoo/odoo.conf",
         "DEPLOYMENT_AREA": "undefined",
@@ -177,6 +287,35 @@ def get_default_environment(context):
 
 
 def make_context(override_context=None):
+    """
+    Returns a default context that can be used to generate an image.
+
+    The default context will contain everything you need to generate the
+    docker image. It will have all the native libraries needed for the
+    parameter provided. It will also define the steps to generate the
+    docker image.
+
+    Each steps correspond to a template in `templates/*.jinja`. Those
+    templates are rendered sequentially in the order defined in the
+    context. The context is also available to all the steps.
+
+    This function can be used to generate a context and have a script
+    extend it or have a script later update the values.
+
+    For example, you can execute the script using:
+
+    .. code:: bash
+
+        odootools docker context | ./my_script | odootols docker render
+
+
+    This will output the context from this method to a custom script
+    `my_script` which can then modify the context by adding more steps or
+    adding/removing packages.
+
+    Let say you want to build an image with more dependencies without having to
+    add any extra layer to a common image.
+    """
     if override_context is None:
         override_context = {}
 
@@ -208,6 +347,12 @@ def make_context(override_context=None):
 
 
 def get_current_date():
+    """
+    Get the current date as formatted by Odoo releases.
+
+    Returns:
+        Str: Returns a date in the format YYYYMMDD.
+    """
     FORMAT = "%Y%m%d"
 
     if 'CUR_DATE' in os.environ:
@@ -219,6 +364,12 @@ def get_current_date():
 
 
 def default_labels(context):
+    """
+    Returns a default list of OCI labels.
+
+    Returns:
+        HashMap<Str, Str>: Returns a list of lbales to describe the image.
+    """
     create_date = get_current_date()
 
     description = (
@@ -226,9 +377,9 @@ def default_labels(context):
     )
 
     author = "Loïc Faure-Lacroix <lamerstar@gmail.com>"
-    documentation = "https://github.com/llacroix/odoo-docker"
+    documentation = "https://github.com/odoo-plus/odootools-docker"
     url = "https://hub.docker.com/r/llacroix/odoo"
-    repo = "https://github.com/llacroix/odoo-docker"
+    repo = "https://github.com/odoo-plus/odootools-docker"
 
     labels = {
         "org.opencontainers.image.created": create_date,
@@ -250,6 +401,24 @@ def default_labels(context):
 
 
 def get_host_config(context):
+    """
+    Define the host config on which Odoo will run.
+
+    This method will select the distribution to use based on
+    the version of Odoo provided in the context. This means that
+    if you want to install Odoo 14 on let say Ubuntu, it will select
+    the last compatible version that provides a list of package that
+    works with the selected version of Odoo.
+
+    It's not 100% correct in the sense that it might be possible
+    to run odoo 12 on Ubuntu focal. But it means that unless it has
+    been tested with anything else. It will use an older distribution
+    if needed as some recent distribution may not have the required
+    dependencies or have a broken set of dependencies.
+
+    Returns:
+        HashMap<Str, Any>: Hashmap of a host configuration.
+    """
     odoo_version = get_odoo_version(context)
     os_name = "ubuntu"
 
@@ -279,8 +448,21 @@ def get_host_config(context):
     }
 
 
-def render():
-    context = get_context()
+def render(context=None):
+    """
+    Main method that render a context.
+
+    This method will generate a list of loaders based on the
+    template_dirs properties defined in the context. These directories
+    can be added in the context to add more steps to your docker file
+    or to extend the existing steps by overshadowing them in your
+    own templates.
+
+    Returns:
+        Str: A rendered Dockerfile.
+    """
+    if context is None:
+        context = get_context()
 
     loaders = [
         FileSystemLoader(dirname)
@@ -299,4 +481,5 @@ def render():
     )
 
     template = env.get_template("main.jinja")
+
     return template.render(**context)
