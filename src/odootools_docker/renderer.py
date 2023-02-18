@@ -209,7 +209,7 @@ def get_odoo_pip_packages(context):
         longer supported.
     """
     packages = [
-        # "odoo-tools",
+        "odoo-tools",
     ]
 
     python_version = get_python_version(context)

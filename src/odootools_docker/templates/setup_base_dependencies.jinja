@@ -6,7 +6,6 @@ RUN set -x; \
 {%- endfor %}
     && rm -rf /var/lib/apt/lists/* \
     && update-alternatives --install /usr/bin/python python /usr/bin/{{python_bin}} 1 \
-    && python -m pip install odoo-tools \
     && rm -rf /var/lib/apt/lists/* \
     && rm -rf /root/.cache
 
