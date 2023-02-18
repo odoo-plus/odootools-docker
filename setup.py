@@ -5,15 +5,15 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setuptools.setup(
     name="odootools_docker",
-    version="0.0.1",
+    version="0.1.0",
     author="Loïc Faure-Lacroix",
     author_email="lamerstar@gmail.com",
     description="Odootools script to generate docker images",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/pypa/sampleproject",
+    url="https://github.com/odoo-plus/odootools-docker",
     project_urls={
-        "Bug Tracker": "https://github.com/pypa/sampleproject/issues",
+        "Bug Tracker": "https://github.com/odoo-plus/odootools-docker/issues",
     },
     classifiers=[
         "Programming Language :: Python :: 3",
@@ -28,6 +28,7 @@ setuptools.setup(
     python_requires=">=3.6",
     install_requires=[
         'Jinja2',
+        'click',
     ],
     entry_points={
         "odootools.command": [
